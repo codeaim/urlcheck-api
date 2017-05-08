@@ -1,0 +1,102 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Provision AWS Web API Gateway and related AWS Lambda functions to support
+  the etdrivingschool-web project
+Parameters:
+  MailgunApiKeyParameter: {Description: Enter Mailgun API key., Type: String}
+  MailgunDomainParameter: {Description: Enter Mailgun domain., Type: String}
+  TwitterAccessTokenKeyParameter: {Description: Enter Twitter access token key., Type: String}
+  TwitterAccessTokenSecretParameter: {Description: Enter Twitter access token secret., Type: String}
+  TwitterConsumerKeyParameter: {Description: Enter Twitter consumer key., Type: String}
+  TwitterConsumerSecretParameter: {Description: Enter Twitter consumer secret., Type: String}
+Resources:
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Action: ['sts:AssumeRole']
+          Effect: Allow
+          Principal:
+            Service: [lambda.amazonaws.com, apigateway.amazonaws.com]
+        Version: '2012-10-17'
+      ManagedPolicyArns: ['arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole']
+      Path: /
+  ApiGateway: 
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      BodyS3Location: {Bucket: etdrivingschool-api, Key: swagger.yml}
+      FailOnWarnings: true
+  FunctionCreateContact:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code: {S3Bucket: etdrivingschool-api, S3Key: deploy.zip}
+      Environment:
+        Variables:
+          MAILGUN_API_KEY: {Ref: MailgunApiKeyParameter}
+          MAILGUN_DOMAIN: {Ref: MailgunDomainParameter}
+      FunctionName: etdrivingschool-contact
+      Handler: index.contact
+      MemorySize: 128
+      Role:
+        Fn::GetAtt: [LambdaExecutionRole, Arn]
+      Runtime: nodejs6.10
+      Timeout: 10
+  ApiGatewayFunctionCreateContactPermission:
+    Type: "AWS::Lambda::Permission"
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName:
+        Fn::GetAtt: [FunctionCreateContact, Arn]
+      Principal: apigateway.amazonaws.com
+      SourceArn:
+        Fn::Join:
+          - ''
+          - - 'arn:aws:execute-api:'
+            - Ref: AWS::Region
+            - ':'
+            - Ref: AWS::AccountId
+            - ':'
+            - Ref: ApiGateway
+            - '/*/*/*'
+  FunctionCreateTweet:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code: {S3Bucket: etdrivingschool-api, S3Key: deploy.zip}
+      Environment:
+        Variables:
+          TWITTER_ACCESS_TOKEN_KEY: {Ref: TwitterAccessTokenKeyParameter}
+          TWITTER_ACCESS_TOKEN_SECRET: {Ref: TwitterAccessTokenSecretParameter}
+          TWITTER_CONSUMER_KEY: {Ref: TwitterConsumerKeyParameter}
+          TWITTER_CONSUMER_SECRET: {Ref: TwitterConsumerSecretParameter}
+      FunctionName: etdrivingschool-tweet
+      Handler: index.tweet
+      MemorySize: 128
+      Role:
+        Fn::GetAtt: [LambdaExecutionRole, Arn]
+      Runtime: nodejs6.10
+      Timeout: 10
+  ApiGatewayFunctionCreateTweetPermission:
+    Type: "AWS::Lambda::Permission"
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName:
+        Fn::GetAtt: [FunctionCreateTweet, Arn]
+      Principal: apigateway.amazonaws.com
+      SourceArn:
+        Fn::Join:
+          - ''
+          - - 'arn:aws:execute-api:'
+            - Ref: AWS::Region
+            - ':'
+            - Ref: AWS::AccountId
+            - ':'
+            - Ref: ApiGateway
+            - '/*/*/*'
+  ApiGatewayDeployment:
+    Type: AWS::ApiGateway::Deployment
+    DependsOn: ApiGateway
+    Properties:
+      StageName: prod
+      RestApiId: 
+        Ref: ApiGateway
+    
