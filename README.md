@@ -1,5 +1,5 @@
 # Introduction
-**urlcheck-api** is used to provision AWS API Gateway and related AWS Lambda functions to support the urlcheck-web project.
+**urlcheck-api** is used to provision AWS API Gateway and related AWS Lambda functions to support the urlcheck-web and urlcheck-probe projects.
 
 # Installation
 Clone the repository

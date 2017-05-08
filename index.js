@@ -16,7 +16,7 @@ module.exports.candidate = (event, context, callback) => {
                 AND ((state = 'WAITING' AND refresh <= NOW()) OR (state = 'ELECTED' AND locked <= NOW()))
                 AND (confirming = FALSE OR region <> $1::text)
         )
-        RETURNING id, username, name, url, status, confirming
+        RETURNING id, username, name, protocol, url, status, confirming
     `;
 
     client.connect(() => {

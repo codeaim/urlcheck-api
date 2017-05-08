@@ -1,5 +1,5 @@
 swagger: '2.0'
-info: {description: urlcheck simple url monitoring, title: urlcheck, version: 0.0.1}
+info: {description: urlcheck is a url monitoring service, title: urlcheck, version: 0.0.1}
 schemes: [https]
 basePath: /prod
 paths:
@@ -38,6 +38,7 @@ definitions:
       id: {type: string}
       username: {type: string}
       name: {type: string}
+      protocol: {type: string}
       url: {type: string}
       status: {type: string}
       confirming: {type: boolean}
