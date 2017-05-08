@@ -1,13 +1,8 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: Provision AWS Web API Gateway and related AWS Lambda functions to support
-  the etdrivingschool-web project
+  the urlcheck-web project
 Parameters:
-  MailgunApiKeyParameter: {Description: Enter Mailgun API key., Type: String}
-  MailgunDomainParameter: {Description: Enter Mailgun domain., Type: String}
-  TwitterAccessTokenKeyParameter: {Description: Enter Twitter access token key., Type: String}
-  TwitterAccessTokenSecretParameter: {Description: Enter Twitter access token secret., Type: String}
-  TwitterConsumerKeyParameter: {Description: Enter Twitter consumer key., Type: String}
-  TwitterConsumerSecretParameter: {Description: Enter Twitter consumer secret., Type: String}
+  DatabaseUrlParameter: {Description: Enter urlcheck database url., Type: String}
 Resources:
   LambdaExecutionRole:
     Type: AWS::IAM::Role
@@ -24,63 +19,28 @@ Resources:
   ApiGateway: 
     Type: AWS::ApiGateway::RestApi
     Properties:
-      BodyS3Location: {Bucket: etdrivingschool-api, Key: swagger.yml}
+      BodyS3Location: {Bucket: urlcheck-api, Key: swagger.yml}
       FailOnWarnings: true
-  FunctionCreateContact:
+  FunctionCandidate:
     Type: AWS::Lambda::Function
     Properties:
-      Code: {S3Bucket: etdrivingschool-api, S3Key: deploy.zip}
+      Code: {S3Bucket: urlcheck-api, S3Key: deploy.zip}
       Environment:
         Variables:
-          MAILGUN_API_KEY: {Ref: MailgunApiKeyParameter}
-          MAILGUN_DOMAIN: {Ref: MailgunDomainParameter}
-      FunctionName: etdrivingschool-contact
-      Handler: index.contact
+          DATABASE_URL: {Ref: DatabaseUrlParameter}
+      FunctionName: urlcheck-candidate
+      Handler: index.candidate
       MemorySize: 128
       Role:
         Fn::GetAtt: [LambdaExecutionRole, Arn]
       Runtime: nodejs6.10
       Timeout: 10
-  ApiGatewayFunctionCreateContactPermission:
+  ApiGatewayFunctionCandidatePermission:
     Type: "AWS::Lambda::Permission"
     Properties:
       Action: lambda:InvokeFunction
       FunctionName:
-        Fn::GetAtt: [FunctionCreateContact, Arn]
-      Principal: apigateway.amazonaws.com
-      SourceArn:
-        Fn::Join:
-          - ''
-          - - 'arn:aws:execute-api:'
-            - Ref: AWS::Region
-            - ':'
-            - Ref: AWS::AccountId
-            - ':'
-            - Ref: ApiGateway
-            - '/*/*/*'
-  FunctionCreateTweet:
-    Type: AWS::Lambda::Function
-    Properties:
-      Code: {S3Bucket: etdrivingschool-api, S3Key: deploy.zip}
-      Environment:
-        Variables:
-          TWITTER_ACCESS_TOKEN_KEY: {Ref: TwitterAccessTokenKeyParameter}
-          TWITTER_ACCESS_TOKEN_SECRET: {Ref: TwitterAccessTokenSecretParameter}
-          TWITTER_CONSUMER_KEY: {Ref: TwitterConsumerKeyParameter}
-          TWITTER_CONSUMER_SECRET: {Ref: TwitterConsumerSecretParameter}
-      FunctionName: etdrivingschool-tweet
-      Handler: index.tweet
-      MemorySize: 128
-      Role:
-        Fn::GetAtt: [LambdaExecutionRole, Arn]
-      Runtime: nodejs6.10
-      Timeout: 10
-  ApiGatewayFunctionCreateTweetPermission:
-    Type: "AWS::Lambda::Permission"
-    Properties:
-      Action: lambda:InvokeFunction
-      FunctionName:
-        Fn::GetAtt: [FunctionCreateTweet, Arn]
+        Fn::GetAtt: [FunctionCandidate, Arn]
       Principal: apigateway.amazonaws.com
       SourceArn:
         Fn::Join:

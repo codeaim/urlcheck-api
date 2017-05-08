@@ -1,25 +1,23 @@
 swagger: '2.0'
-info: {description: Belfast based driving school specializing in providing high quality
-    affordable driving lessons. We offer highly competetive prices from a DOE approved
-    driving instructor., title: ET Driving School, version: 0.0.1}
+info: {description: urlcheck simple url monitoring, title: urlcheck, version: 0.0.1}
 schemes: [https]
 basePath: /prod
-host: g5lns65xdc.execute-api.eu-west-1.amazonaws.com
 paths:
-  /contact:
+  /candidate:
     post:
       consumes: [application/json]
-      description: Sends inserted contact form details via email to ET Driving School
-        admin
+      description: Returns candidates for the specified region
       parameters:
-        - description: Contact form details
+        - description: Candidate request
           in: body
-          name: Contact
+          name: CandidateRequest
           required: true
-          schema: {$ref: '#/definitions/Contact'}
+          schema: {$ref: '#/definitions/CandidateRequest'}
       produces: [application/json]
       responses:
-        201: {description: Contact email sent successfully}
+        200:
+          description: Contact email sent successfully
+          schema: {$ref: '#/definitions/Candidate'}
       x-amazon-apigateway-integration:
         contentHandling: CONVERT_TO_TEXT
         httpMethod: POST
@@ -27,25 +25,17 @@ paths:
         responses:
           default: {statusCode: '200'}
         type: aws_proxy
-        uri: arn:aws:apigateway:eu-west-1:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-west-1:326341022855:function:etdrivingschool-contact/invocations
-  /tweet:
-    get:
-      description: Returns recent tweets of etdrivingschool twitter user
-      produces: [application/json]
-      responses:
-        200: {description: Tweets successfully returned}
-      x-amazon-apigateway-integration:
-        contentHandling: CONVERT_TO_TEXT
-        httpMethod: POST
-        passthroughBehavior: when_no_match
-        responses:
-          default: {statusCode: '200'}
-        type: aws_proxy
-        uri: arn:aws:apigateway:eu-west-1:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-west-1:326341022855:function:etdrivingschool-tweet/invocations
 definitions:
-  Contact:
+  CandidateRequest:
     properties:
-      email: {format: email, type: string}
-      message: {type: string}
-      title: {type: string}
+      region: {type: string}
+    type: object
+  Candidate:
+    properties:
+      id: {type: string}
+      username: {type: string}
+      name: {type: string}
+      url: {format: uri, type: string}
+      status: {type: string}
+      confirming: {type: boolean}
     type: object
