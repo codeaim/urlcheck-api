@@ -2,9 +2,9 @@
 
 const pg = require('pg');
 
-module.exports.candidates = (event, context, callback) => {
-    const requestBody = JSON.parse(event.body);
+module.exports.candidate = (event, context, callback) => {
     const client = new pg.Client(process.env.DATABASE_URL);
+    const requestBody = JSON.parse(event.body);
     const sql = `
         UPDATE "check"
         SET state = 'ELECTED', locked = NOW() + '1 MINUTE'
@@ -20,15 +20,19 @@ module.exports.candidates = (event, context, callback) => {
     `;
 
     client.connect(() => {
-        console.log([requestBody.region]);
-        client.query(sql, [requestBody.region], (err, result) => {
+        client.query(sql, [requestBody.region], (error, result) => {
+            if (error) callback(error);
 
-            result.rows.map((candidate) => {
-                console.log(candidate)
-            });
+            client.end(function (error) {
+                if (error) callback(error);
 
-            client.end(function (err) {
-                callback(err);
+                const response = {
+                    "statusCode": 200,
+                    "headers": {},
+                    "body": JSON.stringify(result.rows)
+                };
+
+                callback(null, response);
             });
         });
     });

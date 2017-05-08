@@ -24,7 +24,7 @@ zip -r deploy.zip index.js node_modules
 
 Create AWS S3 bucket
 ```bash
-aws s3api create-bucket --bucket urlcheck-api
+aws s3api create-bucket --bucket urlcheck-api --region eu-west-1 --create-bucket-configuration LocationConstraint=eu-west-1
 ```
 
 Upload deployment package to AWS S3 bucket
@@ -44,7 +44,7 @@ aws s3 cp template.yml s3://urlcheck-api/template.yml
 
 Create etdrivingschool-api stack using AWS CloudFormation template. Replace parameter values with valid values.
 ```bash
-aws cloudformation create-stack --stack-name urlcheck-api --template-url https://s3.amazonaws.com/urlcheck-api/template.yml --capabilities CAPABILITY_IAM --parameters ParameterKey=MailgunApiKeyParameter,ParameterValue=MailgunApiKeyParameter ParameterKey=MailgunDomainParameter,ParameterValue=MailgunDomainParameter ParameterKey=TwitterConsumerKeyParameter,ParameterValue=TwitterConsumerKeyParameter ParameterKey=TwitterConsumerSecretParameter,ParameterValue=TwitterConsumerSecretParameter ParameterKey=TwitterAccessTokenKeyParameter,ParameterValue=TwitterAccessTokenKeyParameter ParameterKey=TwitterAccessTokenSecretParameter,ParameterValue=TwitterAccessTokenSecretParameter
+aws cloudformation create-stack --stack-name urlcheck-api --template-url https://s3.amazonaws.com/urlcheck-api/template.yml --capabilities CAPABILITY_IAM --parameters ParameterKey=DatabaseUrlParameter,ParameterValue=DatabaseUrlParameter
 ```
 
 View details of provisioned AWS API Gateway

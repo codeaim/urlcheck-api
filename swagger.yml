@@ -17,7 +17,9 @@ paths:
       responses:
         200:
           description: Contact email sent successfully
-          schema: {$ref: '#/definitions/Candidate'}
+          schema:
+            type: array
+            items: {$ref: '#/definitions/Candidate'}
       x-amazon-apigateway-integration:
         contentHandling: CONVERT_TO_TEXT
         httpMethod: POST
@@ -25,6 +27,7 @@ paths:
         responses:
           default: {statusCode: '200'}
         type: aws_proxy
+        uri: arn:aws:apigateway:eu-west-1:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-west-1:326341022855:function:urlcheck-candidate/invocations
 definitions:
   CandidateRequest:
     properties:
@@ -35,7 +38,7 @@ definitions:
       id: {type: string}
       username: {type: string}
       name: {type: string}
-      url: {format: uri, type: string}
+      url: {type: string}
       status: {type: string}
       confirming: {type: boolean}
     type: object
