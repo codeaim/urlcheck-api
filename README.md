@@ -1,7 +1,18 @@
 # Introduction
+**urlcheck** is a url monitoring service.
 **urlcheck-api** is used to provision AWS API Gateway and related AWS Lambda functions to support the urlcheck-web and urlcheck-probe projects.
 
+# Prerequisites
+- Node v6.4.x with npm (https://nodejs.org/)
+- AWS Command Line Interface (https://aws.amazon.com/cli/)
+- AWS access credentials (http://docs.aws.amazon.com/cli/latest/reference/configure/)
+
 # Installation
+Apply AWS access credentials
+```bash
+aws configure
+```
+
 Clone the repository
 ```bash
 git clone https://github.com/codeaim/urlcheck-api.git
