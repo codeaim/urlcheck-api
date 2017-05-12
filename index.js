@@ -32,6 +32,8 @@ module.exports.candidate = (event, context, callback) => {
                     "body": JSON.stringify(result.rows)
                 };
 
+                console.log(`Returning rows ${JSON.stringify(result.rows)}`);
+
                 callback(null, response);
             });
         });
