@@ -1,15 +1,17 @@
 {
   "name": "urlcheck-api",
-  "config" : { "database_url" : "database_url" },
+  "config": {
+    "database-url": ""
+  },
   "scripts": {
-    "update-stack": "aws cloudformation update-stack --stack-name urlcheck-api --template-url https://s3.amazonaws.com/urlcheck-api/template.yml --capabilities CAPABILITY_IAM --parameters ParameterKey=DatabaseUrlParameter,ParameterValue=$npm_package_config_database_url",
-    "create-stack": "aws cloudformation create-stack --stack-name urlcheck-api --template-url https://s3.amazonaws.com/urlcheck-api/template.yml --capabilities CAPABILITY_IAM --parameters ParameterKey=DatabaseUrlParameter,ParameterValue=$npm_package_config_database_url",
+    "update-stack": "aws cloudformation update-stack --stack-name urlcheck-api --template-url https://s3.amazonaws.com/urlcheck-api/template.yml --capabilities CAPABILITY_IAM --parameters ParameterKey=DatabaseUrlParameter,ParameterValue=$npm_package_config_database-url && aws cloudformation wait stack-update-complete --stack-name urlcheck-api",
+    "create-stack": "aws cloudformation create-stack --stack-name urlcheck-api --template-url https://s3.amazonaws.com/urlcheck-api/template.yml --capabilities CAPABILITY_IAM --parameters ParameterKey=DatabaseUrlParameter,ParameterValue=$npm_package_config_database-url && aws cloudformation wait stack-create-complete --stack-name urlcheck-api",
     "upload-template": "aws s3 cp template.yml s3://urlcheck-api/template.yml",
     "upload-swagger": "aws s3 cp swagger.yml s3://urlcheck-api/swagger.yml",
     "upload-deploy": "zip -r deploy.zip index.js node_modules && aws s3 cp deploy.zip s3://urlcheck-api/deploy.zip",
-    "start": "npm run upload-deploy && npm run upload-swagger && npm run upload-template && npm run create-stack",
+    "create": "npm run upload-deploy && npm run upload-swagger && npm run upload-template && npm run create-stack",
     "update": "npm run upload-deploy && npm run upload-swagger && npm run upload-template && npm run update-stack",
-    "delete": "aws cloudformation delete-stack --stack-name urlcheck-api"
+    "delete": "aws cloudformation delete-stack --stack-name urlcheck-api && aws cloudformation wait stack-delete-complete --stack-name urlcheck-api"
   },
   "dependencies": {
     "pg": "^6.1.2"

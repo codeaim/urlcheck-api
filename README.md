@@ -7,12 +7,18 @@
 - AWS Command Line Interface (https://aws.amazon.com/cli/)
 - AWS access credentials (http://docs.aws.amazon.com/cli/latest/reference/configure/)
 
-# Installation
+# Setup
 Apply AWS access credentials
 ```bash
 aws configure
 ```
 
+Create AWS S3 bucket
+```bash
+aws s3api create-bucket --bucket urlcheck-api --region eu-west-1 --create-bucket-configuration LocationConstraint=eu-west-1
+```
+
+# Getting started
 Clone the repository
 ```bash
 git clone https://github.com/codeaim/urlcheck-api.git
@@ -22,23 +28,18 @@ Navigate into the project directory
 ```bash
 cd urlcheck-api
 ```
-Create AWS S3 bucket
-```bash
-aws s3api create-bucket --bucket urlcheck-api --region eu-west-1 --create-bucket-configuration LocationConstraint=eu-west-1
-```
 
 Install dependencies
 ```bash
 npm install
 ```
 
-Set deployment configuration
+Set deployment configuration with valid values
 ```bash
-npm config set urlcheck-api:database_url=database_url
+npm config set urlcheck-api:database_url=<database_url>
 ```
 
-
-Produce deployment package. Upload deployment package, AWS API Gateway OpenAPI specification & AWS CloudFormation template to AWS S3 bucket. Create AWS CloudFormation stack.
+Produce deployment package. Upload deployment package, AWS API Gateway OpenAPI specification & AWS CloudFormation template to AWS S3 bucket. Create AWS CloudFormation stack and wait for completion.
 ```bash
-npm start
+npm run create
 ```
