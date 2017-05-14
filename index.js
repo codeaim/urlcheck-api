@@ -2,7 +2,7 @@
 
 const pg = require('pg');
 
-module.exports.candidate = (event, context, callback) => {
+module.exports.checkCandidates = (event, context, callback) => {
     const client = new pg.Client(process.env.DATABASE_URL);
     const requestBody = JSON.parse(event.body);
     const sql = `
@@ -16,7 +16,7 @@ module.exports.candidate = (event, context, callback) => {
                 AND ((state = 'WAITING' AND refresh <= NOW()) OR (state = 'ELECTED' AND locked <= NOW()))
                 AND (confirming = FALSE OR region <> $1::text)
         )
-        RETURNING id, username, name, protocol, url, status, confirming
+        RETURNING id, protocol, url
     `;
 
     client.connect(() => {
@@ -38,4 +38,18 @@ module.exports.candidate = (event, context, callback) => {
             });
         });
     });
+};
+
+module.exports.checkResults = (event, context, callback) => {
+    const client = new pg.Client(process.env.DATABASE_URL);
+    const requestBody = JSON.parse(event.body);
+    console.log(`requestBody: ${JSON.stringify(requestBody)}`);
+
+    const response = {
+        "statusCode": 202,
+        "headers": {},
+        "body": ""
+    };
+
+    callback(null, response);
 };

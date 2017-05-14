@@ -3,7 +3,7 @@ info: {description: urlcheck is a url monitoring service, title: urlcheck, versi
 schemes: [https]
 basePath: /prod
 paths:
-  /candidate:
+  /check/candidate:
     post:
       consumes: [application/json]
       description: Returns candidates for the specified region
@@ -27,7 +27,31 @@ paths:
         responses:
           default: {statusCode: '200'}
         type: aws_proxy
-        uri: arn:aws:apigateway:eu-west-1:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-west-1:326341022855:function:urlcheck-candidate/invocations
+        uri: arn:aws:apigateway:eu-west-1:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-west-1:326341022855:function:urlcheck-api-check-candidates/invocations
+  /check/result:
+    post:
+      consumes: [application/json]
+      description: Submit check results
+      parameters:
+        - description: Check results
+          in: body
+          name: CheckResults
+          required: true
+          schema:
+            type: array
+            items: {$ref: '#/definitions/CheckResult'}
+      produces: [application/json]
+      responses:
+        202:
+          description: Check results submitted successfully
+      x-amazon-apigateway-integration:
+        contentHandling: CONVERT_TO_TEXT
+        httpMethod: POST
+        passthroughBehavior: when_no_match
+        responses:
+          default: {statusCode: '200'}
+        type: aws_proxy
+        uri: arn:aws:apigateway:eu-west-1:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-west-1:326341022855:function:urlcheck-api-check-results/invocations
 definitions:
   CandidateRequest:
     properties:
@@ -36,10 +60,11 @@ definitions:
   Candidate:
     properties:
       id: {type: string}
-      username: {type: string}
-      name: {type: string}
       protocol: {type: string}
       url: {type: string}
-      status: {type: string}
-      confirming: {type: boolean}
+    type: object
+  CheckResult:
+    properties:
+      id: {type: string}
+      statusCode: {type: number}
     type: object
