@@ -67,4 +67,6 @@ definitions:
     properties:
       id: {type: string}
       statusCode: {type: number}
+      responseTime: {type: number}
+      region: {type: string}
     type: object

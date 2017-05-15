@@ -12,10 +12,22 @@ Resources:
         - Action: ['sts:AssumeRole']
           Effect: Allow
           Principal:
-            Service: [lambda.amazonaws.com, apigateway.amazonaws.com]
+            Service: [lambda.amazonaws.com, apigateway.amazonaws.com, sns.amazonaws.com]
         Version: '2012-10-17'
       ManagedPolicyArns: ['arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole']
       Path: /
+  LambdaExecutionPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: LambdaPublishSNS
+      Roles:
+        - Ref: LambdaExecutionRole
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action: ['sns:Publish']
+            Resource: '*'
   ApiGateway: 
     Type: AWS::ApiGateway::RestApi
     Properties:
@@ -35,13 +47,43 @@ Resources:
         Fn::GetAtt: [LambdaExecutionRole, Arn]
       Runtime: nodejs6.10
       Timeout: 10
-  FunctionCheckResults:
+  FunctionProcessCheckResults:
     Type: AWS::Lambda::Function
     Properties:
       Code: {S3Bucket: urlcheck-api, S3Key: deploy.zip}
       Environment:
         Variables:
           DATABASE_URL: {Ref: DatabaseUrlParameter}
+      FunctionName: urlcheck-api-process-check-results
+      Handler: index.processCheckResults
+      MemorySize: 128
+      Role:
+        Fn::GetAtt: [LambdaExecutionRole, Arn]
+      Runtime: nodejs6.10
+      Timeout: 10
+  TopicResults:
+    Type: AWS::SNS::Topic
+    Properties:
+      Subscription:
+        - Endpoint:
+            Fn::GetAtt: [FunctionProcessCheckResults, Arn]
+          Protocol: lambda
+      TopicName: check-results
+  LambdaTopicChecksInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      Principal: sns.amazonaws.com
+      SourceArn: {Ref: TopicResults}
+      FunctionName:
+        Fn::GetAtt: [FunctionProcessCheckResults, Arn]
+  FunctionCheckResults:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code: {S3Bucket: urlcheck-api, S3Key: deploy.zip}
+      Environment:
+        Variables:
+          RESULTS_TOPIC: {Ref: TopicResults}
       FunctionName: urlcheck-api-check-results
       Handler: index.checkResults
       MemorySize: 128

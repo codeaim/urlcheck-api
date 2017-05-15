@@ -11,10 +11,11 @@
     "upload-deploy": "zip -r deploy.zip index.js node_modules && aws s3 cp deploy.zip s3://urlcheck-api/deploy.zip",
     "create": "npm run upload-deploy && npm run upload-swagger && npm run upload-template && npm run create-stack",
     "update": "npm run upload-swagger && npm run upload-template && npm run update-stack",
-    "update-code": "npm run upload-deploy && aws lambda update-function-code --function-name urlcheck-candidate --s3-bucket urlcheck-api --s3-key deploy.zip && aws lambda update-function-code --function-name urlcheck-result --s3-bucket urlcheck-api --s3-key deploy.zip",
+    "update-code": "npm run upload-deploy && aws lambda update-function-code --function-name urlcheck-api-check-candidates --s3-bucket urlcheck-api --s3-key deploy.zip && aws lambda update-function-code --function-name urlcheck-api-check-results --s3-bucket urlcheck-api --s3-key deploy.zip && aws lambda update-function-code --function-name urlcheck-api-process-check-results --s3-bucket urlcheck-api --s3-key deploy.zip",
     "delete": "aws cloudformation delete-stack --stack-name urlcheck-api && aws cloudformation wait stack-delete-complete --stack-name urlcheck-api"
   },
   "dependencies": {
-    "pg": "^6.1.2"
+    "aws-sdk": "^2.49.0",
+    "pg-promise": "^5.6.8"
   }
 }
