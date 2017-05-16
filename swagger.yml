@@ -62,6 +62,8 @@ definitions:
       id: {type: string}
       protocol: {type: string}
       url: {type: string}
+      status: {type: string}
+      confirming: {type: boolean}
     type: object
   CheckResult:
     properties:

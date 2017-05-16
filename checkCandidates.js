@@ -18,7 +18,7 @@ module.exports.checkCandidates = (event, context, callback) => {
                 AND ((state = 'WAITING' AND refresh <= NOW()) OR (state = 'ELECTED' AND locked <= NOW()))
                 AND (confirming = FALSE OR region != '${region}')
         )
-        RETURNING id, protocol, url;
+        RETURNING id, protocol, url, status, confirming;
     `;
 
     client.connect();
