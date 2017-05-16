@@ -68,6 +68,8 @@ definitions:
   CheckResult:
     properties:
       id: {type: string}
+      previousStatus: {type: string}
+      confirming: {type: boolean}
       statusCode: {type: number}
       responseTime: {type: number}
       region: {type: string}
