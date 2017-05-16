@@ -1,69 +1,6 @@
 'use strict';
 
-const AWS = require("aws-sdk");
 const pgp = require('pg-promise')();
-
-module.exports.checkCandidates = (event, context, callback) => {
-    const client = pgp(process.env.DATABASE_URL);
-    const requestBody = JSON.parse(event.body);
-    const sql = `
-        UPDATE "check"
-        SET 
-            state = 'ELECTED',
-            locked = NOW() + '1 MINUTE'
-        WHERE id IN (
-            SELECT id
-            FROM "check"
-            WHERE
-                disabled IS NULL
-                AND ((state = 'WAITING' AND refresh <= NOW()) OR (state = 'ELECTED' AND locked <= NOW()))
-                AND (confirming = FALSE OR region != '${requestBody.region}')
-        )
-        RETURNING id, protocol, url
-    `;
-
-    console.log(`Check candidates for region ${requestBody.region} sql ${sql}`);
-    client.manyOrNone(sql)
-        .then((result) => {
-            const response = {
-                "statusCode": 200,
-                "headers": {},
-                "body": JSON.stringify(result)
-            };
-
-            console.log(`Returning rows ${JSON.stringify(result)} for region ${requestBody.region}`);
-
-            callback(null, response);
-        })
-        .catch(error => {
-            callback(error);
-        });
-};
-
-module.exports.checkResults = (event, context, callback) => {
-    const topic = process.env.RESULTS_TOPIC;
-    const requestBody = JSON.parse(event.body);
-
-    const checkResults = JSON.stringify(requestBody);
-    console.log(`Publishing ${checkResults} to ${topic}`);
-
-    new AWS.SNS().publish(
-        {
-            Message: checkResults,
-            TopicArn: topic
-        },
-        (error) => {
-            if (error) callback(error);
-
-            const response = {
-                "statusCode": 202,
-                "headers": {},
-                "body": ""
-            };
-
-            callback(null, response);
-        });
-};
 
 module.exports.processCheckResults = (event, context, callback) => {
     const client = pgp(process.env.DATABASE_URL);
@@ -80,18 +17,35 @@ module.exports.processCheckResults = (event, context, callback) => {
         const changeInserts = checkResults.map((checkResult) => {
             const status = checkResult.statusCode < 400 ? 'UP' : 'DOWN';
             const sql = `
-            INSERT INTO change (check_id, status, status_code, created)
-            SELECT 
-                '${checkResult.id}',
-                '${status}',
-                ${checkResult.statusCode},
-                now()
-            FROM "check"
-            WHERE id = '${checkResult.id}'
-                AND status != '${checkResult.statusCode < 400 ? 'UP' : 'DOWN'}'
-                AND confirming = true;`;
+            INSERT INTO change (check_id, status, status_code, region, created, confirmed)
+                SELECT
+                    :id,
+                    :status,
+                    :statusCode,
+                    :region,
+                    NOW(),
+                    CASE WHEN
+                        change.created > (NOW() - ("check".interval * INTERVAL '1 minute' * 2))
+                        AND change.status_code = :statusCode
+                        AND change.status = :status
+                        AND change.region != :region
+                    THEN TRUE
+                    ELSE FALSE END
+                FROM "check"
+                INNER JOIN change ON change.check_id = :id
+                WHERE
+                    "check".id = :id
+                    AND "check".status != :status
+                    AND change.created = (SELECT max(change.created)
+                        FROM change
+                        WHERE change.check_id = "check".id);`;
             console.log(`Insert change ${checkResult.id} sql ${sql}`);
-            return t.query(sql);
+            return t.query(sql, {
+                id: checkResult.id,
+                status: checkResult.status,
+                statusCode: checkResult.statusCode < 400 ? 'UP' : 'DOWN',
+                region: checkResult.region
+            });
         });
 
         const updateChecks = checkResults.map((checkResult) => {

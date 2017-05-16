@@ -8,7 +8,7 @@
     "create-stack": "aws cloudformation create-stack --stack-name urlcheck-api --template-url https://s3.amazonaws.com/urlcheck-api/template.yml --capabilities CAPABILITY_IAM --parameters ParameterKey=DatabaseUrlParameter,ParameterValue=$npm_package_config_database_url && aws cloudformation wait stack-create-complete --stack-name urlcheck-api",
     "upload-template": "aws s3 cp template.yml s3://urlcheck-api/template.yml",
     "upload-swagger": "aws s3 cp swagger.yml s3://urlcheck-api/swagger.yml",
-    "upload-deploy": "zip -r deploy.zip index.js node_modules && aws s3 cp deploy.zip s3://urlcheck-api/deploy.zip",
+    "upload-deploy": "zip -r deploy.zip checkCandidates.js processCheckResults.js checkResults.js node_modules && aws s3 cp deploy.zip s3://urlcheck-api/deploy.zip",
     "create": "npm run upload-deploy && npm run upload-swagger && npm run upload-template && npm run create-stack",
     "update": "npm run upload-swagger && npm run upload-template && npm run update-stack",
     "update-code": "npm run upload-deploy && aws lambda update-function-code --function-name urlcheck-api-check-candidates --s3-bucket urlcheck-api --s3-key deploy.zip && aws lambda update-function-code --function-name urlcheck-api-check-results --s3-bucket urlcheck-api --s3-key deploy.zip && aws lambda update-function-code --function-name urlcheck-api-process-check-results --s3-bucket urlcheck-api --s3-key deploy.zip",
@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "aws-sdk": "^2.49.0",
+    "pg": "^6.2.2",
     "pg-promise": "^5.6.8"
   }
 }

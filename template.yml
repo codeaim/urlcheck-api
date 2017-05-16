@@ -41,7 +41,7 @@ Resources:
         Variables:
           DATABASE_URL: {Ref: DatabaseUrlParameter}
       FunctionName: urlcheck-api-check-candidates
-      Handler: index.checkCandidates
+      Handler: checkCandidates.checkCandidates
       MemorySize: 128
       Role:
         Fn::GetAtt: [LambdaExecutionRole, Arn]
@@ -55,7 +55,7 @@ Resources:
         Variables:
           DATABASE_URL: {Ref: DatabaseUrlParameter}
       FunctionName: urlcheck-api-process-check-results
-      Handler: index.processCheckResults
+      Handler: processCheckResults.processCheckResults
       MemorySize: 128
       Role:
         Fn::GetAtt: [LambdaExecutionRole, Arn]
@@ -85,7 +85,7 @@ Resources:
         Variables:
           RESULTS_TOPIC: {Ref: TopicResults}
       FunctionName: urlcheck-api-check-results
-      Handler: index.checkResults
+      Handler: checkResults.checkResults
       MemorySize: 128
       Role:
         Fn::GetAtt: [LambdaExecutionRole, Arn]
