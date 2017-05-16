@@ -41,13 +41,16 @@ module.exports.processCheckResults = (event, context, callback) => {
             WHERE response.created = (SELECT max(response.created) FROM response WHERE response.check_id = c.id)
             AND (change.created = (SELECT max(change.created) FROM change WHERE change.check_id = c.id) OR change.created IS NULL);`;
 
+        console.log(`Insert responses sql: ${responseInsertBatchSql}`);
+        if(confirmed.length > 0)  console.log(`Insert changes sql: ${changeInsertBatchSql}`);
+        console.log(`Update checks sql: ${checkUpdateSql}`);
+
         return t.batch(confirmed.length > 0
             ? [t.query(responseInsertBatchSql), t.query(changeInsertBatchSql), t.query(checkUpdateSql)]
             : [t.query(responseInsertBatchSql), t.query(checkUpdateSql)]);
-    }).then(data => {
-        console.log(`data: ${JSON.stringify(data)}`);
-    }).catch(error => {
-        console.log(`error: ${JSON.stringify(error)}`);
+    }).then(() => {
+        callback();
+    }).catch((error) => {
         callback(error);
     });
 };
