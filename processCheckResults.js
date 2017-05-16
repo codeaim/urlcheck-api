@@ -7,69 +7,43 @@ module.exports.processCheckResults = (event, context, callback) => {
     const checkResults = JSON.parse(event.Records[0].Sns.Message);
     console.log(`Processing check results: ${JSON.stringify(checkResults)}`);
 
+    const confirmed = checkResults
+        .filter((checkResult) => checkResult.status !== checkResult.previousStatus && checkResult.confirming)
+        .map((checkResult) => checkResult.id);
+
+    const unconfirmed = checkResults
+        .filter((checkResult) => checkResult.status !== checkResult.previousStatus && !checkResult.confirming)
+        .map((checkResult) => checkResult.id);
+
     client.tx(t => {
-        const sql = `
+        const responseInsertBatchSql = `
             INSERT INTO response (check_id, duration, region, created)
-            VALUES ${checkResults.map((checkResult) => `('${checkResult.id}', ${checkResult.responseTime}, '${checkResult.region}', now())`).join(', ')}`;
-        const responseInsertBatch = t.query(sql);
-        console.log(`Insert responses sql ${sql}`);
+            VALUES ${checkResults.map((checkResult) => `('${checkResult.id}', ${checkResult.responseTime}, '${checkResult.region}', now());`).join(', ')}`;
 
-        const changeInserts = checkResults.map((checkResult) => {
-            const status = checkResult.statusCode < 400 ? 'UP' : 'DOWN';
-            const sql = `
-            INSERT INTO change (check_id, status, status_code, region, created, confirmed)
-                SELECT
-                    :id,
-                    :status,
-                    :statusCode,
-                    :region,
-                    NOW(),
-                    CASE WHEN
-                        change.created > (NOW() - ("check".interval * INTERVAL '1 minute' * 2))
-                        AND change.status_code = :statusCode
-                        AND change.status = :status
-                        AND change.region != :region
-                    THEN TRUE
-                    ELSE FALSE END
-                FROM "check"
-                INNER JOIN change ON change.check_id = :id
-                WHERE
-                    "check".id = :id
-                    AND "check".status != :status
-                    AND change.created = (SELECT max(change.created)
-                        FROM change
-                        WHERE change.check_id = "check".id);`;
-            console.log(`Insert change ${checkResult.id} sql ${sql}`);
-            return t.query(sql, {
-                id: checkResult.id,
-                status: checkResult.status,
-                statusCode: checkResult.statusCode < 400 ? 'UP' : 'DOWN',
-                region: checkResult.region
-            });
-        });
+        const changeInsertBatchSql = `
+            INSERT INTO change (check_id, status, status_code, created)
+            VALUES ${confirmed.map((checkResult) => `('${checkResult.id}', '${checkResult.status}', ${checkResult.statusCode}, now());`).join(', ')}`;
 
-        const updateChecks = checkResults.map((checkResult) => {
-            const status = checkResult.statusCode < 400 ? 'UP' : 'DOWN';
-            const sql = `
+        const checkUpdateSql = `
             UPDATE "check"
             SET
-                state  = 'WAITING',
+                status = CASE WHEN c.id IN ('${confirmed.join('\', \'')}') THEN change.status ELSE c.status END,
+                state = 'WAITING',
+                modified = NOW(),
+                refresh = CASE WHEN c.id IN ('${unconfirmed.join('\', \'')}') THEN NOW() ELSE (NOW() + (c.interval * interval '1 minute')) END,
                 locked = NULL,
-                region = '${checkResult.region}',
-                status = CASE WHEN confirming THEN '${status}' ELSE status END,
-                refresh = CASE  WHEN status = '${status}' AND confirming = false THEN (now() + ("interval" * interval '1 minute'))
-                                WHEN status = '${status}' AND confirming = true THEN (now() + (interval '30 seconds'))
-                                WHEN status != '${status}' AND confirming = false THEN refresh
-                                WHEN status != '${status}' AND confirming = true THEN (now() + ("interval" * interval '1 minute')) END,
-                confirming = status != '${status}' AND confirming = false,
-                modified = now(),
-                version = version + 1
-            WHERE id = '${checkResult.id}';`;
-            console.log(`Update ${checkResult.id} sql ${sql}`);
-            return t.query(sql);
-        });
+                version = c.version + 1,
+                confirming = c.id IN ('${unconfirmed.join('\', \'')}'),
+                region = response.region
+            FROM "check" c
+            LEFT JOIN change ON c.id = change.check_id
+            INNER JOIN response ON c.id = response.check_id
+            WHERE response.created = (SELECT max(response.created) FROM response WHERE response.check_id = c.id)
+            AND (change.created = (SELECT max(change.created) FROM change WHERE change.check_id = c.id) OR change.created IS NULL);`;
 
-        return t.batch([responseInsertBatch, ...changeInserts, ...updateChecks]);
+        return t.batch(confirmed.length > 0
+            ? [t.query(responseInsertBatchSql), t.query(changeInsertBatchSql), t.query(checkUpdateSql)]
+            : [t.query(responseInsertBatchSql), t.query(checkUpdateSql)]);
     }).then(data => {
         console.log(`data: ${JSON.stringify(data)}`);
     }).catch(error => {

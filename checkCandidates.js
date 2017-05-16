@@ -9,7 +9,8 @@ module.exports.checkCandidates = (event, context, callback) => {
         UPDATE "check"
         SET 
             state = 'ELECTED',
-            locked = NOW() + INTERVAL '1 MINUTE'
+            modified = NOW(),
+            locked = NOW() + INTERVAL '1 MINUTE'   
         WHERE id IN (
             SELECT id
             FROM "check"
