@@ -15,7 +15,7 @@ aws configure
 
 Create AWS S3 bucket
 ```bash
-aws s3api create-bucket --bucket urlcheck-api --region eu-west-1 --create-bucket-configuration LocationConstraint=eu-west-1
+npm run setup
 ```
 
 # Getting started

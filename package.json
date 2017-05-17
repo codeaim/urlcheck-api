@@ -9,6 +9,7 @@
     "upload-template": "aws s3 cp template.yml s3://urlcheck-api/template.yml",
     "upload-swagger": "aws s3 cp swagger.yml s3://urlcheck-api/swagger.yml",
     "upload-deploy": "zip -r deploy.zip checkCandidates.js processCheckResults.js checkResults.js node_modules && aws s3 cp deploy.zip s3://urlcheck-api/deploy.zip",
+    "setup": "aws s3api create-bucket --bucket urlcheck-api --region eu-west-1 --create-bucket-configuration LocationConstraint=eu-west-1",
     "create": "npm run upload-deploy && npm run upload-swagger && npm run upload-template && npm run create-stack",
     "update": "npm run upload-swagger && npm run upload-template && npm run update-stack",
     "update-code": "npm run upload-deploy && aws lambda update-function-code --function-name urlcheck-api-check-candidates --s3-bucket urlcheck-api --s3-key deploy.zip && aws lambda update-function-code --function-name urlcheck-api-check-results --s3-bucket urlcheck-api --s3-key deploy.zip && aws lambda update-function-code --function-name urlcheck-api-process-check-results --s3-bucket urlcheck-api --s3-key deploy.zip",
