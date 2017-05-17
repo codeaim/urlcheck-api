@@ -22,7 +22,7 @@ module.exports.processCheckResults = (event, context, callback) => {
 
         const changeInsertBatchSql = `
             INSERT INTO change (check_id, status, status_code, created)
-            VALUES ${confirmed.map((checkResult) => `('${checkResult.id}', '${checkResult.status}', ${checkResult.statusCode}, now());`).join(', ')}`;
+            VALUES ${checkResults.filter((checkResult) => checkResult.status !== checkResult.previousStatus && checkResult.confirming).map((checkResult) => `('${checkResult.id}', '${checkResult.status}', ${checkResult.statusCode}, now());`).join(', ')}`;
 
         const checkUpdateSql = `
             UPDATE "check"
