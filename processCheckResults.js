@@ -1,9 +1,9 @@
 'use strict';
 
 const pgp = require('pg-promise')();
+const client = pgp(process.env.DATABASE_URL);
 
 module.exports.processCheckResults = (event, context, callback) => {
-    const client = pgp(process.env.DATABASE_URL);
     const checkResults = JSON.parse(event.Records[0].Sns.Message);
     console.log(`Processing check results: ${JSON.stringify(checkResults)}`);
 
@@ -34,8 +34,10 @@ module.exports.processCheckResults = (event, context, callback) => {
                 locked = NULL,
                 version = c.version + 1,
                 confirming = c.id IN ('${unconfirmed.join('\', \'')}'),
-                region = response.region
+                region = response.region,
+                disabled = CASE WHEN "user".credit <= 1 THEN NOW() ELSE NULL END
             FROM "check" c
+            INNER JOIN "user" ON c.username = "user".username
             LEFT JOIN change ON c.id = change.check_id
             INNER JOIN response ON c.id = response.check_id
             WHERE response.created = (SELECT max(response.created) FROM response WHERE response.check_id = c.id)
@@ -49,8 +51,11 @@ module.exports.processCheckResults = (event, context, callback) => {
             ? [t.query(responseInsertBatchSql), t.query(changeInsertBatchSql), t.query(checkUpdateSql)]
             : [t.query(responseInsertBatchSql), t.query(checkUpdateSql)]);
     }).then(() => {
+        pgp.end();
+        console.log("Processed check results");
         callback();
     }).catch((error) => {
+        pgp.end();
         callback(error);
     });
 };
