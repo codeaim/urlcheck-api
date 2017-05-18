@@ -3,7 +3,7 @@ info: {description: urlcheck is a url monitoring service, title: urlcheck, versi
 schemes: [https]
 basePath: /prod
 paths:
-  /check/candidate:
+  /probe/candidate:
     post:
       consumes: [application/json]
       description: Returns candidates for the specified region
@@ -27,8 +27,8 @@ paths:
         responses:
           default: {statusCode: '200'}
         type: aws_proxy
-        uri: arn:aws:apigateway:eu-west-1:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-west-1:326341022855:function:urlcheck-api-check-candidates/invocations
-  /check/result:
+        uri: arn:aws:apigateway:eu-west-1:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-west-1:326341022855:function:urlcheck-api-probe-candidates/invocations
+  /probe/result:
     post:
       consumes: [application/json]
       description: Submit check results
@@ -51,7 +51,64 @@ paths:
         responses:
           default: {statusCode: '200'}
         type: aws_proxy
-        uri: arn:aws:apigateway:eu-west-1:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-west-1:326341022855:function:urlcheck-api-check-results/invocations
+        uri: arn:aws:apigateway:eu-west-1:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-west-1:326341022855:function:urlcheck-api-probe-results/invocations
+  /user/{username}:
+    get:
+      produces: [application/json]
+      parameters:
+        - description: Username
+          in: path
+          name: username
+          required: true
+          type: string
+        - description: Flag to include user checks
+          in: query
+          name: include-checks
+          required: false
+          type: boolean
+      responses:
+        200:
+          description: User
+          schema: {$ref: '#/definitions/User'}
+      x-amazon-apigateway-integration:
+        contentHandling: CONVERT_TO_TEXT
+        httpMethod: POST
+        passthroughBehavior: when_no_match
+        responses:
+          default: {statusCode: '200'}
+        type: aws_proxy
+        uri: arn:aws:apigateway:eu-west-1:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-west-1:326341022855:function:urlcheck-api-user-get-by-username/invocations
+  /check/{check-id}:
+    get:
+      produces: [application/json]
+      parameters:
+        - description: Check id
+          in: path
+          name: check-id
+          required: true
+          type: string
+        - description: Flag to includes check changes
+          in: query
+          name: include-changes
+          required: false
+          type: string
+        - description: Flag to includes check responses
+          in: query
+          name: include-responses
+          required: false
+          type: string
+      responses:
+        200:
+          description: User
+          schema: {$ref: '#/definitions/Check'}
+      x-amazon-apigateway-integration:
+        contentHandling: CONVERT_TO_TEXT
+        httpMethod: POST
+        passthroughBehavior: when_no_match
+        responses:
+          default: {statusCode: '200'}
+        type: aws_proxy
+        uri: arn:aws:apigateway:eu-west-1:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-west-1:326341022855:function:urlcheck-api-check-get-by-id/invocations
 definitions:
   CandidateRequest:
     properties:
@@ -74,3 +131,57 @@ definitions:
       responseTime: {type: number}
       region: {type: string}
     type: object
+  User:
+    properties:
+      username: {type: string}
+      email: {type: string}
+      admin: {type: boolean}
+      created: {type: string, format: date-time}
+      modified: {type: string, format: date-time}
+      version: {type: number}
+      credit: {type: number}
+      checks:
+        type: array
+        items: {$ref: '#/definitions/Check'}
+    type: object
+  Check:
+    properties:
+      id: {type: string}
+      username: {type: string}
+      name: {type: string}
+      url: {type: string}
+      protocol: {type: string}
+      status: {type: string}
+      created: {type: string, format: date-time}
+      modified: {type: string, format: date-time}
+      disabled: {type: boolean}
+      interval: {type: number}
+      headers:
+        type: array
+        items: {$ref: '#/definitions/Header'}
+      changes:
+        type: array
+        items: {$ref: '#/definitions/Change'}
+      responses:
+        type: array
+        items: {$ref: '#/definitions/Response'}
+    type: object
+  Header:
+    properties:
+      name: {type: string}
+      value: {type: string}
+    type: object
+  Change:
+    properties:
+      status: {type: string}
+      statusCode: {type: number}
+      created: {type: string, format: date-time}
+    type: object
+  Response:
+    properties:
+      duration: {type: number}
+      region: {type: string}
+      created: {type: string, format: date-time}
+    type: object
+
+

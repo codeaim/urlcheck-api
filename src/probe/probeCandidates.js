@@ -2,7 +2,7 @@
 
 const pg = require('pg');
 
-module.exports.checkCandidates = (event, context, callback) => {
+module.exports.handler = (event, context, callback) => {
     const region = JSON.parse(event.body).region;
     const client = new pg.Client(process.env.DATABASE_URL);
     const sql = `
@@ -32,9 +32,9 @@ module.exports.checkCandidates = (event, context, callback) => {
         if (error) callback(error);
 
         const response = {
-            "statusCode": 200,
-            "headers": {},
-            "body": JSON.stringify(result.rows)
+            statusCode: 200,
+            headers: {},
+            body: JSON.stringify(result.rows)
         };
 
         console.log(`Returning rows ${response.body} for region ${region}`);

@@ -3,7 +3,7 @@
 const pgp = require('pg-promise')();
 const client = pgp(process.env.DATABASE_URL);
 
-module.exports.processCheckResults = (event, context, callback) => {
+module.exports.handler = (event, context, callback) => {
     const checkResults = JSON.parse(event.Records[0].Sns.Message);
     console.log(`Processing check results: ${JSON.stringify(checkResults)}`);
 

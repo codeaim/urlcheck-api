@@ -33,29 +33,29 @@ Resources:
     Properties:
       BodyS3Location: {Bucket: urlcheck-api, Key: swagger.yml}
       FailOnWarnings: true
-  FunctionCheckCandidates:
+  FunctionProbeCandidates:
     Type: AWS::Lambda::Function
     Properties:
       Code: {S3Bucket: urlcheck-api, S3Key: deploy.zip}
       Environment:
         Variables:
           DATABASE_URL: {Ref: DatabaseUrlParameter}
-      FunctionName: urlcheck-api-check-candidates
-      Handler: checkCandidates.checkCandidates
+      FunctionName: urlcheck-api-probe-candidates
+      Handler: src/probe/probeCandidates.handler
       MemorySize: 128
       Role:
         Fn::GetAtt: [LambdaExecutionRole, Arn]
       Runtime: nodejs6.10
       Timeout: 10
-  FunctionProcessCheckResults:
+  FunctionProbeCheckResults:
     Type: AWS::Lambda::Function
     Properties:
       Code: {S3Bucket: urlcheck-api, S3Key: deploy.zip}
       Environment:
         Variables:
           DATABASE_URL: {Ref: DatabaseUrlParameter}
-      FunctionName: urlcheck-api-process-check-results
-      Handler: processCheckResults.processCheckResults
+      FunctionName: urlcheck-api-probe-check-results
+      Handler: src/probe/probeCheckResults.handler
       MemorySize: 128
       Role:
         Fn::GetAtt: [LambdaExecutionRole, Arn]
@@ -66,7 +66,7 @@ Resources:
     Properties:
       Subscription:
         - Endpoint:
-            Fn::GetAtt: [FunctionProcessCheckResults, Arn]
+            Fn::GetAtt: [FunctionProbeCheckResults, Arn]
           Protocol: lambda
       TopicName: check-results
   LambdaTopicChecksInvokePermission:
@@ -76,16 +76,44 @@ Resources:
       Principal: sns.amazonaws.com
       SourceArn: {Ref: TopicResults}
       FunctionName:
-        Fn::GetAtt: [FunctionProcessCheckResults, Arn]
-  FunctionCheckResults:
+        Fn::GetAtt: [FunctionProbeCheckResults, Arn]
+  FunctionProbeResults:
     Type: AWS::Lambda::Function
     Properties:
       Code: {S3Bucket: urlcheck-api, S3Key: deploy.zip}
       Environment:
         Variables:
           RESULTS_TOPIC: {Ref: TopicResults}
-      FunctionName: urlcheck-api-check-results
-      Handler: checkResults.checkResults
+      FunctionName: urlcheck-api-probe-results
+      Handler: src/probe/probeResults.handler
+      MemorySize: 128
+      Role:
+        Fn::GetAtt: [LambdaExecutionRole, Arn]
+      Runtime: nodejs6.10
+      Timeout: 10
+  FunctionCheckGetById:
+      Type: AWS::Lambda::Function
+      Properties:
+        Code: {S3Bucket: urlcheck-api, S3Key: deploy.zip}
+        Environment:
+          Variables:
+            DATABASE_URL: {Ref: DatabaseUrlParameter}
+        FunctionName: urlcheck-api-check-get-by-id
+        Handler: src/check/checkGetById.handler
+        MemorySize: 128
+        Role:
+          Fn::GetAtt: [LambdaExecutionRole, Arn]
+        Runtime: nodejs6.10
+        Timeout: 10
+  FunctionUserGetByUsername:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code: {S3Bucket: urlcheck-api, S3Key: deploy.zip}
+      Environment:
+        Variables:
+          DATABASE_URL: {Ref: DatabaseUrlParameter}
+      FunctionName: urlcheck-api-user-get-by-username
+      Handler: src/user/userGetByUsername.handler
       MemorySize: 128
       Role:
         Fn::GetAtt: [LambdaExecutionRole, Arn]
@@ -96,7 +124,7 @@ Resources:
     Properties:
       Action: lambda:InvokeFunction
       FunctionName:
-        Fn::GetAtt: [FunctionCheckCandidates, Arn]
+        Fn::GetAtt: [FunctionProbeCandidates, Arn]
       Principal: apigateway.amazonaws.com
       SourceArn:
         Fn::Join:
@@ -113,7 +141,41 @@ Resources:
     Properties:
       Action: lambda:InvokeFunction
       FunctionName:
-        Fn::GetAtt: [FunctionCheckResults, Arn]
+        Fn::GetAtt: [FunctionProbeResults, Arn]
+      Principal: apigateway.amazonaws.com
+      SourceArn:
+        Fn::Join:
+          - ''
+          - - 'arn:aws:execute-api:'
+            - Ref: AWS::Region
+            - ':'
+            - Ref: AWS::AccountId
+            - ':'
+            - Ref: ApiGateway
+            - '/*/*/*/*'
+  ApiGatewayFunctionCheckGetByIdPermission:
+    Type: "AWS::Lambda::Permission"
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName:
+        Fn::GetAtt: [FunctionCheckGetById, Arn]
+      Principal: apigateway.amazonaws.com
+      SourceArn:
+        Fn::Join:
+          - ''
+          - - 'arn:aws:execute-api:'
+            - Ref: AWS::Region
+            - ':'
+            - Ref: AWS::AccountId
+            - ':'
+            - Ref: ApiGateway
+            - '/*/*/*/*'
+  ApiGatewayFunctionUserGetByUsernamePermission:
+    Type: "AWS::Lambda::Permission"
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName:
+        Fn::GetAtt: [FunctionUserGetByUsername, Arn]
       Principal: apigateway.amazonaws.com
       SourceArn:
         Fn::Join:
