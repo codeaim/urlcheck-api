@@ -52,6 +52,28 @@ paths:
           default: {statusCode: '200'}
         type: aws_proxy
         uri: arn:aws:apigateway:eu-west-1:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-west-1:326341022855:function:urlcheck-api-probe-results/invocations
+  /user:
+    post:
+      consumes: [application/json]
+      description: Creates a user
+      parameters:
+        - description: Create user request
+          in: body
+          name: CreateUser
+          required: true
+          schema: {$ref: '#/definitions/CreateUser'}
+      produces: [application/json]
+      responses:
+        200:
+          description: User created
+      x-amazon-apigateway-integration:
+        contentHandling: CONVERT_TO_TEXT
+        httpMethod: POST
+        passthroughBehavior: when_no_match
+        responses:
+          default: {statusCode: '200'}
+        type: aws_proxy
+        uri: arn:aws:apigateway:eu-west-1:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-west-1:326341022855:function:urlcheck-api-user-create/invocations
   /user/{username}:
     get:
       produces: [application/json]
@@ -134,6 +156,12 @@ definitions:
       statusCode: {type: number}
       responseTime: {type: number}
       region: {type: string}
+    type: object
+  CreateUser:
+    properties:
+      username: {type: string}
+      email: {type: string}
+      password: {type: string, format: password}
     type: object
   User:
     properties:
